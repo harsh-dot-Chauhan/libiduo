@@ -56,6 +56,8 @@ model Product {
   slug        String      @unique
   description String      @db.Text
   price       Decimal     @db.Decimal(10, 2)
+  mrp         Decimal?    @db.Decimal(10, 2)
+  badge       String?
   stock       Int         @default(0)
   images      String      @db.Text
   tags        String?

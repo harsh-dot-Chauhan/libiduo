@@ -8,6 +8,8 @@ export const createProductSchema = z.object({
     .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers and hyphens"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   price: z.number().positive("Price must be greater than 0"),
+  mrp: z.number().positive("MRP must be greater than 0").optional(),
+  badge: z.enum(["New", "Bestseller", "Sale", "Limited"]).optional(),
   stock: z.number().int().min(0, "Stock cannot be negative"),
   images: z.array(z.string().url()).min(1, "At least one image is required"),
   tags: z.array(z.string()).optional(),
@@ -24,7 +26,7 @@ export const productQuerySchema = z.object({
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
   search: z.string().optional(),
-  sort: z.enum(["price_asc", "price_desc", "newest", "oldest"]).default("newest"),
+  sort: z.enum(["price_asc", "price_desc", "newest", "oldest", "popular", "rating"]).default("newest"),
 });
 
 export type CreateProductInput = z.infer<typeof createProductSchema>;

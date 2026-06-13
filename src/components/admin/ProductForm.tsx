@@ -134,9 +134,26 @@ export default function ProductForm({ categories: initialCategories, defaultValu
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700">MRP (₹) <span className="text-gray-400 font-normal">— original price for discount display</span></label>
+          <input {...register("mrp", { setValueAs: (v: string) => v === "" || v === undefined ? undefined : Number(v) })} type="number" step="0.01" className="mt-1 input" placeholder="Leave blank if no discount" />
+          {errors.mrp && <p className="mt-1 text-xs text-red-600">{errors.mrp.message}</p>}
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700">Stock</label>
           <input {...register("stock", { valueAsNumber: true })} type="number" className="mt-1 input" />
           {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Badge <span className="text-gray-400 font-normal">(optional label on card)</span></label>
+          <select {...register("badge", { setValueAs: (v: string) => v === "" ? undefined : v })} className="mt-1 input">
+            <option value="">— None —</option>
+            <option value="New">New</option>
+            <option value="Bestseller">Bestseller</option>
+            <option value="Sale">Sale</option>
+            <option value="Limited">Limited</option>
+          </select>
         </div>
 
         {/* Category selector */}
