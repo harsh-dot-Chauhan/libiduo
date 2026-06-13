@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronRight, Tag } from "lucide-react";
 import axios from "axios";
 
@@ -21,7 +20,6 @@ function slugify(str: string) {
 }
 
 export default function CategoryManager({ initialCategories }: Props) {
-  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -49,9 +47,12 @@ export default function CategoryManager({ initialCategories }: Props) {
         slug: slug.trim(),
         parentId: parentId || null,
       });
-      setCategories((prev) => [...prev, res.data.data].sort((a, b) => a.name.localeCompare(b.name)));
+      const created = res.data.data;
+      // Optimistically update local state without triggering a full server re-render
+      setCategories((prev) =>
+        [...prev, { ...created, parent: parentId ? (prev.find((c) => c.id === parentId) ?? null) : null, _count: { products: 0, children: 0 } }].sort((a, b) => a.name.localeCompare(b.name))
+      );
       setName(""); setSlug(""); setParentId("");
-      router.refresh();
     } catch (err) {
       setError(axios.isAxiosError(err) ? (err.response?.data?.error ?? "Failed to create") : "Failed to create");
     } finally {
@@ -65,7 +66,6 @@ export default function CategoryManager({ initialCategories }: Props) {
     try {
       await axios.delete(`/api/admin/categories/${id}`);
       setCategories((prev) => prev.filter((c) => c.id !== id));
-      router.refresh();
     } catch (err) {
       alert(axios.isAxiosError(err) ? (err.response?.data?.error ?? "Failed to delete") : "Failed to delete");
     } finally {

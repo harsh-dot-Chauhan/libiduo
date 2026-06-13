@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { parentId, ...rest } = parsed.data as typeof parsed.data & { parentId?: string };
+    const { parentId, ...rest } = parsed.data;
     const category = await db.category.create({
-      data: { ...rest, ...(parentId ? { parentId } : {}) },
+      data: { ...rest, parentId: parentId ?? null },
     });
     return NextResponse.json<ApiResponse<typeof category>>({ success: true, data: category }, { status: 201 });
   } catch {
