@@ -1,57 +1,49 @@
 #!/usr/bin/env node
 
 /**
- * Script to create or reset an admin user
- * Usage: node scripts/create-admin.js <email> <password>
- * Example: node scripts/create-admin.js admin@example.com Admin123
+ * Auto-creates an admin user on deployment if one does not already exist.
+ * Reads ADMIN_EMAIL and ADMIN_PASSWORD from environment / .env file.
+ * Run: node scripts/create-admin.js
  */
 
+require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
 
 const db = new PrismaClient();
 
-async function createOrUpdateAdmin(email, password) {
-  try {
-    if (!email || !password) {
-      console.error('❌ Error: Email and password are required');
-      console.error('Usage: node scripts/create-admin.js <email> <password>');
-      process.exit(1);
-    }
+async function ensureAdmin() {
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
 
-    // Hash the password
+  if (!email || !password) {
+    console.error('❌ ADMIN_EMAIL and ADMIN_PASSWORD must be set in the environment');
+    process.exit(1);
+  }
+
+  try {
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create or update the admin user
-    const user = await db.user.upsert({
-      where: { email },
-      create: {
-        email,
-        passwordHash,
-        role: 'ADMIN',
-        name: 'Admin User',
-      },
-      update: {
-        passwordHash,
-        role: 'ADMIN',
-      },
-    });
+    const existing = await db.user.findUnique({ where: { email } });
 
-    console.log('✅ Admin user created/updated successfully!');
-    console.log(`Email: ${user.email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role: ${user.role}`);
-    console.log('\nYou can now login at http://localhost:3001/admin/login');
+    if (existing) {
+      await db.user.update({
+        where: { email },
+        data: { passwordHash, role: 'ADMIN' },
+      });
+      console.log(`✅ Admin user updated: ${email}`);
+    } else {
+      await db.user.create({
+        data: { email, passwordHash, role: 'ADMIN', name: 'Admin' },
+      });
+      console.log(`✅ Admin user created: ${email}`);
+    }
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error('❌ Error creating admin user:', error.message);
     process.exit(1);
   } finally {
     await db.$disconnect();
   }
 }
 
-// Get email and password from command line arguments
-const email = process.argv[2];
-const password = process.argv[3];
-
-createOrUpdateAdmin(email, password);
+ensureAdmin();
