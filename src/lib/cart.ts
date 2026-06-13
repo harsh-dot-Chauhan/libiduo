@@ -77,11 +77,18 @@ async function dbMergeGuestCart(guestKey: string, userKey: string): Promise<void
 
 // ─── Redis-backed (primary) ───────────────────────────────────────────────────
 
+function parseRedisCartItem(value: unknown): CartItem {
+  if (typeof value === "string") {
+    return JSON.parse(value) as CartItem;
+  }
+  return value as CartItem;
+}
+
 async function redisGetCart(key: string): Promise<Cart> {
   const redis = getRedis();
-  const raw = await redis.hgetall<Record<string, string>>(key);
+  const raw = await redis.hgetall<Record<string, unknown>>(key);
   if (!raw) return { items: [], total: 0, count: 0 };
-  const items: CartItem[] = Object.values(raw).map((v) => JSON.parse(v) as CartItem);
+  const items: CartItem[] = Object.values(raw).map(parseRedisCartItem);
   return buildCart(items);
 }
 
