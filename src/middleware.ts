@@ -8,10 +8,25 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
 
+  const isAdminLogin = pathname === "/admin/login";
   const isAdminRoute = ADMIN_ROUTES.some((r) => pathname.startsWith(r));
   const isUserRoute = USER_ROUTES.some((r) => pathname.startsWith(r));
 
-  if ((isAdminRoute || isUserRoute) && !session) {
+  // Admin login page: let unauthenticated through; redirect authenticated admins to dashboard
+  if (isAdminLogin) {
+    if (session?.user.role === "ADMIN") {
+      return NextResponse.redirect(new URL("/admin", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (isAdminRoute && !session) {
+    const loginUrl = new URL("/admin/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isUserRoute && !session) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
