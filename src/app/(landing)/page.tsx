@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
+import AgeGate from "@/components/ui/AgeGate";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function HomePage() {
 
   return (
     <div style={{ background: DARK, color: TEXT, fontFamily: "var(--font-geist-sans), Inter, sans-serif", overflowX: "hidden" }}>
+      <AgeGate />
 
       {/* ── Hero ── */}
       <section style={{ minHeight: "90vh", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center", padding: "60px 24px 40px", position: "relative", overflow: "hidden" }}>
