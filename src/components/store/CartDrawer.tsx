@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 
@@ -15,8 +16,11 @@ const BUR = "#6B1A2A";
 
 export default function CartDrawer() {
   const { items, total, count, isOpen, loading, closeDrawer, updateItem, removeItem, fetchCart } = useCartStore();
+  const pathname = usePathname();
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
+
+  useEffect(() => { closeDrawer(); }, [pathname, closeDrawer]);
 
   return (
     <>
