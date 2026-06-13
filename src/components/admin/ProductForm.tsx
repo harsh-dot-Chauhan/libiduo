@@ -102,7 +102,6 @@ export default function ProductForm({ categories: initialCategories, defaultValu
         await axios.post("/api/products", data);
       }
       router.push("/admin/products");
-      router.refresh();
     } catch (e: unknown) {
       const msg = axios.isAxiosError(e) ? e.response?.data?.error : "Something went wrong";
       setError(msg ?? "Something went wrong");
