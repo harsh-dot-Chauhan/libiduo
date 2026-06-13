@@ -22,6 +22,16 @@ export default function CartDrawer() {
 
   useEffect(() => { closeDrawer(); }, [pathname, closeDrawer]);
 
+  useEffect(() => {
+    function handleLinkClick(e: MouseEvent) {
+      if (!isOpen) return;
+      const link = (e.target as HTMLElement).closest("a");
+      if (link) closeDrawer();
+    }
+    document.addEventListener("click", handleLinkClick);
+    return () => document.removeEventListener("click", handleLinkClick);
+  }, [isOpen, closeDrawer]);
+
   return (
     <>
       {isOpen && <div style={{ position: "fixed", inset: 0, zIndex: 40, background: "rgba(0,0,0,0.7)" }} onClick={closeDrawer} />}
