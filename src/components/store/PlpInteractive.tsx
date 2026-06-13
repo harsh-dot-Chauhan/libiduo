@@ -104,86 +104,89 @@ function ProductCardItem({
   const badge = product.badge ? BADGE_STYLES[product.badge] : null;
 
   return (
-    <Link
-      href={`/products/${product.slug}`}
+    <div
       style={{
-        display: "block",
         background: C.mid, border: `0.5px solid ${C.border}`,
-        borderRadius: 16, overflow: "hidden", cursor: "pointer",
-        transition: "all 0.25s", position: "relative",
-        textDecoration: "none",
+        borderRadius: 16, overflow: "hidden",
+        transition: "border-color 0.25s", position: "relative",
       }}
       className="product-plp-card"
     >
-      {/* Image area */}
-      <div style={{
-        height: 160, display: "flex", alignItems: "center", justifyContent: "center",
-        position: "relative",
-        background: `linear-gradient(135deg, ${C.burDark} 0%, ${C.mid2} 100%)`,
-      }}>
-        {hasImage ? (
-          <Image
-            src={images[0]}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 33vw"
-            className="object-cover"
-            style={{ opacity: 0.9 }}
-          />
-        ) : (
-          <span style={{ fontSize: 48, opacity: 0.4 }}>🌹</span>
-        )}
-
-        {/* Badge */}
-        {badge && product.badge && (
-          <span style={{
-            position: "absolute", top: 8, left: 8,
-            fontSize: 9, fontWeight: 600, padding: "3px 8px",
-            borderRadius: 20, letterSpacing: 1, textTransform: "uppercase",
-            background: badge.bg, color: badge.color,
-          }}>
-            {product.badge}
-          </span>
-        )}
-
-        {/* Discreet shipping badge */}
+      {/* Clickable area → PDP */}
+      <Link href={`/products/${product.slug}`} style={{ display: "block", textDecoration: "none" }}>
+        {/* Image area */}
         <div style={{
-          position: "absolute", bottom: 8, left: 8, right: 8,
-          background: "rgba(13,6,8,0.75)", borderRadius: 6,
-          padding: "4px 8px", display: "flex", alignItems: "center", gap: 4,
+          height: 160, display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative",
+          background: `linear-gradient(135deg, ${C.burDark} 0%, ${C.mid2} 100%)`,
         }}>
-          <Lock size={10} color={C.gold} />
-          <span style={{ fontSize: 9, color: C.muted, letterSpacing: 0.5 }}>Discreet shipping</span>
-        </div>
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: 12 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 4, lineHeight: 1.3 }}>
-          {product.name}
-        </div>
-
-        {/* Rating */}
-        {product.avgRating !== null && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
-            <span style={{ color: C.gold, fontSize: 10 }}>{starsStr(product.avgRating)}</span>
-            <span style={{ fontSize: 10, color: C.muted }}>({product.reviewCount})</span>
-          </div>
-        )}
-
-        {/* Price */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: C.gold }}>₹{fmtPrice(product.price)}</span>
-          {hasMrp && (
-            <>
-              <span style={{ fontSize: 11, color: C.muted, textDecoration: "line-through" }}>₹{fmtPrice(product.mrp!)}</span>
-              <span style={{ fontSize: 10, color: C.green, fontWeight: 500 }}>{discPct(product.price, product.mrp!)}% off</span>
-            </>
+          {hasImage ? (
+            <Image
+              src={images[0]}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, 33vw"
+              className="object-cover"
+              style={{ opacity: 0.9 }}
+            />
+          ) : (
+            <span style={{ fontSize: 48, opacity: 0.4 }}>🌹</span>
           )}
+
+          {/* Badge */}
+          {badge && product.badge && (
+            <span style={{
+              position: "absolute", top: 8, left: 8,
+              fontSize: 9, fontWeight: 600, padding: "3px 8px",
+              borderRadius: 20, letterSpacing: 1, textTransform: "uppercase",
+              background: badge.bg, color: badge.color,
+            }}>
+              {product.badge}
+            </span>
+          )}
+
+          {/* Discreet shipping badge */}
+          <div style={{
+            position: "absolute", bottom: 8, left: 8, right: 8,
+            background: "rgba(13,6,8,0.75)", borderRadius: 6,
+            padding: "4px 8px", display: "flex", alignItems: "center", gap: 4,
+          }}>
+            <Lock size={10} color={C.gold} />
+            <span style={{ fontSize: 9, color: C.muted, letterSpacing: 0.5 }}>Discreet shipping</span>
+          </div>
         </div>
 
+        {/* Info */}
+        <div style={{ padding: "12px 12px 8px" }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: C.text, marginBottom: 4, lineHeight: 1.3 }}>
+            {product.name}
+          </div>
+
+          {/* Rating */}
+          {product.avgRating !== null && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 8 }}>
+              <span style={{ color: C.gold, fontSize: 10 }}>{starsStr(product.avgRating)}</span>
+              <span style={{ fontSize: 10, color: C.muted }}>({product.reviewCount})</span>
+            </div>
+          )}
+
+          {/* Price */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: C.gold }}>₹{fmtPrice(product.price)}</span>
+            {hasMrp && (
+              <>
+                <span style={{ fontSize: 11, color: C.muted, textDecoration: "line-through" }}>₹{fmtPrice(product.mrp!)}</span>
+                <span style={{ fontSize: 10, color: C.green, fontWeight: 500 }}>{discPct(product.price, product.mrp!)}% off</span>
+              </>
+            )}
+          </div>
+        </div>
+      </Link>
+
+      {/* Add to Cart — outside the Link so it doesn't trigger navigation */}
+      <div style={{ padding: "8px 12px 12px" }}>
         <button
-          onClick={(e) => { e.stopPropagation(); onAddToCart(product); }}
+          onClick={() => onAddToCart(product)}
           disabled={product.stock === 0}
           style={{
             width: "100%", background: product.stock === 0 ? C.mid2 : C.bur,
@@ -198,7 +201,7 @@ function ProductCardItem({
           {product.stock === 0 ? "Sold Out" : "Add to Cart"}
         </button>
       </div>
-    </Link>
+    </div>
   );
 }
 
