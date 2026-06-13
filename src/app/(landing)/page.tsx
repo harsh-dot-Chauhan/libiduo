@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "LIBIDUO — Pleasure. Reimagined.",
   description:
