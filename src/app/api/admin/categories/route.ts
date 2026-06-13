@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { createCategorySchema } from "@/lib/validations/category";
+import { Prisma } from "@prisma/client";
 import type { ApiResponse } from "@/types";
 
 export async function GET() {
@@ -42,7 +43,13 @@ export async function POST(req: NextRequest) {
       data: { ...rest, parentId: parentId ?? null },
     });
     return NextResponse.json<ApiResponse<typeof category>>({ success: true, data: category }, { status: 201 });
-  } catch {
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      return NextResponse.json<ApiResponse<never>>(
+        { success: false, error: "A category with this slug already exists" },
+        { status: 409 }
+      );
+    }
     return NextResponse.json<ApiResponse<never>>({ success: false, error: "Something went wrong" }, { status: 500 });
   }
 }
