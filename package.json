@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "SKIP_ENV_VALIDATION=1 next build",
+    "build": "npm ci && SKIP_ENV_VALIDATION=1 prisma generate && prisma migrate deploy && next build",
     "start": "next start",
+    "start:prod": "NODE_ENV=production node server.js",
+    "deploy": "npm ci && npm run build && npx prisma migrate deploy",
     "lint": "next lint"
   },
   "dependencies": {
@@ -28,7 +30,10 @@
     "resend": "^6.12.4",
     "stripe": "^22.2.1",
     "zod": "^4.4.3",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.14",
+    "tailwindcss": "^3.4.1",
+    "postcss": "^8",
+    "autoprefixer": "^10.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -38,8 +43,6 @@
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "playwright": "^1.60.0",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   }
 }

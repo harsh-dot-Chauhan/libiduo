@@ -77,18 +77,26 @@ async function dbMergeGuestCart(guestKey: string, userKey: string): Promise<void
 
 // ─── Redis-backed (primary) ───────────────────────────────────────────────────
 
-function parseRedisCartItem(value: unknown): CartItem {
+function parseRedisCartItem(value: unknown): CartItem | null {
   if (typeof value === "string") {
-    return JSON.parse(value) as CartItem;
+    try {
+      return JSON.parse(value) as CartItem;
+    } catch {
+      return null;
+    }
   }
-  return value as CartItem;
+  try {
+    return value as CartItem;
+  } catch {
+    return null;
+  }
 }
 
 async function redisGetCart(key: string): Promise<Cart> {
   const redis = getRedis();
   const raw = await redis.hgetall<Record<string, unknown>>(key);
   if (!raw) return { items: [], total: 0, count: 0 };
-  const items: CartItem[] = Object.values(raw).map(parseRedisCartItem);
+  const items: CartItem[] = Object.values(raw).map(parseRedisCartItem).filter((i): i is CartItem => i !== null);
   return buildCart(items);
 }
 
@@ -110,13 +118,26 @@ async function redisClearCart(key: string): Promise<void> {
 
 async function redisMergeGuestCart(guestKey: string, userKey: string): Promise<void> {
   const redis = getRedis();
-  const raw = await redis.hgetall<Record<string, string>>(guestKey);
+  const raw = await redis.hgetall<Record<string, unknown>>(guestKey);
   if (!raw) return;
-  const guestItems: CartItem[] = Object.values(raw).map((v) => JSON.parse(v) as CartItem);
+  const guestItems: CartItem[] = Object.values(raw)
+    .map(parseRedisCartItem)
+    .filter((i): i is CartItem => i !== null);
+
   for (const item of guestItems) {
-    const existing = await redis.hget<string>(userKey, item.productId);
-    if (existing) {
-      const existingItem = JSON.parse(existing) as CartItem;
+    const existingRaw = await redis.hget(userKey, item.productId) as unknown;
+    let existingItem: CartItem | null = null;
+    if (typeof existingRaw === "string") {
+      try {
+        existingItem = JSON.parse(existingRaw) as CartItem;
+      } catch {
+        existingItem = null;
+      }
+    } else if (existingRaw) {
+      existingItem = existingRaw as CartItem;
+    }
+
+    if (existingItem) {
       const merged: CartItem = { ...existingItem, quantity: Math.min(existingItem.quantity + item.quantity, item.stock) };
       await redis.hset(userKey, { [item.productId]: JSON.stringify(merged) });
     } else {

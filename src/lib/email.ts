@@ -4,6 +4,7 @@ import { orderConfirmationHtml, orderConfirmationText, type OrderConfirmationDat
 import { shippingUpdateHtml, shippingUpdateText, type ShippingUpdateData } from "./emails/shipping-update";
 
 const SITE_URL = process.env.NEXTAUTH_URL ?? "https://libiduo.com";
+const FROM_EMAIL = env.FROM_EMAIL ?? "noreply@libiduo.com";
 
 export function orderUrl(orderId: string) {
   return `${SITE_URL}/orders/${orderId}`;
@@ -12,7 +13,7 @@ export function orderUrl(orderId: string) {
 export async function sendOrderConfirmation(to: string, data: OrderConfirmationData): Promise<void> {
   try {
     await getResend().emails.send({
-      from: env.FROM_EMAIL,
+      from: FROM_EMAIL,
       to,
       subject: `Order Confirmed — #${data.orderId.slice(-8).toUpperCase()} | Libiduo`,
       html: orderConfirmationHtml(data),
@@ -27,7 +28,7 @@ export async function sendOrderConfirmation(to: string, data: OrderConfirmationD
 export async function sendShippingUpdate(to: string, data: ShippingUpdateData): Promise<void> {
   try {
     await getResend().emails.send({
-      from: env.FROM_EMAIL,
+      from: FROM_EMAIL,
       to,
       subject: `Your order #${data.orderId.slice(-8).toUpperCase()} has shipped! 🚚`,
       html: shippingUpdateHtml(data),
