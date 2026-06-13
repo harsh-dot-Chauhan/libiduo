@@ -7,7 +7,7 @@ type Props = { params: { id: string } };
 export default async function EditProductPage({ params }: Props) {
   const [product, categories] = await Promise.all([
     db.product.findFirst({ where: { id: params.id, deletedAt: null } }),
-    db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.category.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, parentId: true } }),
   ]);
 
   if (!product) notFound();

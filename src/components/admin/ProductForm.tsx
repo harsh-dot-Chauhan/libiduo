@@ -6,10 +6,10 @@ import { createProductSchema, type CreateProductInput } from "@/lib/validations/
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { X, Upload } from "lucide-react";
+import { X, Upload, Plus } from "lucide-react";
 import axios from "axios";
 
-type Category = { id: string; name: string };
+type Category = { id: string; name: string; parentId?: string | null };
 
 type Props = {
   categories: Category[];
@@ -17,11 +17,23 @@ type Props = {
   productSlug?: string;
 };
 
-export default function ProductForm({ categories, defaultValues, productSlug }: Props) {
+function slugify(str: string) {
+  return str.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+}
+
+export default function ProductForm({ categories: initialCategories, defaultValues, productSlug }: Props) {
   const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Quick-create category
+  const [showNewCat, setShowNewCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatParentId, setNewCatParentId] = useState("");
+  const [creatingCat, setCreatingCat] = useState(false);
+  const [catError, setCatError] = useState<string | null>(null);
 
   const {
     register,
@@ -35,6 +47,7 @@ export default function ProductForm({ categories, defaultValues, productSlug }: 
   });
 
   const images = watch("images") ?? [];
+  const topLevelCats = categories.filter((c) => !c.parentId);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -58,6 +71,26 @@ export default function ProductForm({ categories, defaultValues, productSlug }: 
   };
 
   const removeImage = (url: string) => setValue("images", images.filter((u) => u !== url));
+
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) { setCatError("Name is required"); return; }
+    setCreatingCat(true); setCatError(null);
+    try {
+      const res = await axios.post<{ success: boolean; data: Category }>("/api/admin/categories", {
+        name: newCatName.trim(),
+        slug: slugify(newCatName.trim()),
+        parentId: newCatParentId || null,
+      });
+      const created = res.data.data;
+      setCategories((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setValue("categoryId", created.id);
+      setNewCatName(""); setNewCatParentId(""); setShowNewCat(false);
+    } catch (err) {
+      setCatError(axios.isAxiosError(err) ? (err.response?.data?.error ?? "Failed") : "Failed");
+    } finally {
+      setCreatingCat(false);
+    }
+  };
 
   const onSubmit = async (data: CreateProductInput) => {
     setSubmitting(true);
@@ -107,18 +140,77 @@ export default function ProductForm({ categories, defaultValues, productSlug }: 
           {errors.stock && <p className="mt-1 text-xs text-red-600">{errors.stock.message}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Category</label>
-          <select {...register("categoryId")} className="mt-1 input">
-            <option value="">Select category</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-          {errors.categoryId && <p className="mt-1 text-xs text-red-600">{errors.categoryId.message}</p>}
+        {/* Category selector */}
+        <div className="sm:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">Category</label>
+            <button
+              type="button"
+              onClick={() => { setShowNewCat((v) => !v); setCatError(null); }}
+              className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700"
+            >
+              <Plus size={12} /> {showNewCat ? "Cancel" : "New category"}
+            </button>
+          </div>
+
+          {showNewCat ? (
+            <div className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4 space-y-3">
+              {catError && <p className="text-xs text-red-600">{catError}</p>}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Category name</label>
+                  <input
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="input w-full"
+                    placeholder="e.g. Vibrators"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Parent <span className="text-gray-400">(optional)</span></label>
+                  <select
+                    value={newCatParentId}
+                    onChange={(e) => setNewCatParentId(e.target.value)}
+                    className="input w-full"
+                  >
+                    <option value="">— Top level —</option>
+                    {topLevelCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                disabled={creatingCat}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {creatingCat ? "Creating…" : "Create & select"}
+              </button>
+            </div>
+          ) : (
+            <>
+              <select {...register("categoryId")} className="mt-1 input">
+                <option value="">Select category</option>
+                {topLevelCats.map((parent) => {
+                  const subs = categories.filter((c) => c.parentId === parent.id);
+                  return subs.length > 0 ? (
+                    <optgroup key={parent.id} label={parent.name}>
+                      <option value={parent.id}>{parent.name} (all)</option>
+                      {subs.map((sub) => (
+                        <option key={sub.id} value={sub.id}>&nbsp;&nbsp;↳ {sub.name}</option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <option key={parent.id} value={parent.id}>{parent.name}</option>
+                  );
+                })}
+              </select>
+              {errors.categoryId && <p className="mt-1 text-xs text-red-600">{errors.categoryId.message}</p>}
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-3 pt-6">
+        <div className="flex items-center gap-3 pt-2">
           <input {...register("isActive")} type="checkbox" id="isActive" className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
           <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active (visible in store)</label>
         </div>
@@ -131,11 +223,11 @@ export default function ProductForm({ categories, defaultValues, productSlug }: 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Tags (comma separated)</label>
+        <label className="block text-sm font-medium text-gray-700">Tags <span className="text-gray-400 font-normal">(comma separated)</span></label>
         <input
           type="text"
           className="mt-1 input"
-          placeholder="electronics, gadgets, sale"
+          placeholder="wellness, premium, bestseller"
           onChange={(e) => setValue("tags", e.target.value.split(",").map((t) => t.trim()).filter(Boolean))}
           defaultValue={(defaultValues?.tags ?? []).join(", ")}
         />

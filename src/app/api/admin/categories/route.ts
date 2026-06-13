@@ -8,7 +8,12 @@ export async function GET() {
   try {
     const categories = await db.category.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
+      select: {
+        id: true, name: true, slug: true, parentId: true,
+        parent: { select: { id: true, name: true } },
+        children: { select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } },
+        _count: { select: { products: true } },
+      },
     });
     return NextResponse.json<ApiResponse<typeof categories>>({ success: true, data: categories });
   } catch {
@@ -32,7 +37,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const category = await db.category.create({ data: parsed.data });
+    const { parentId, ...rest } = parsed.data as typeof parsed.data & { parentId?: string };
+    const category = await db.category.create({
+      data: { ...rest, ...(parentId ? { parentId } : {}) },
+    });
     return NextResponse.json<ApiResponse<typeof category>>({ success: true, data: category }, { status: 201 });
   } catch {
     return NextResponse.json<ApiResponse<never>>({ success: false, error: "Something went wrong" }, { status: 500 });
