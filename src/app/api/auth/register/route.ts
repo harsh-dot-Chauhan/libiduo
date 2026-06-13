@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { db } from "@/lib/db";
+import { registerSchema } from "@/lib/validations/auth";
+import type { ApiResponse } from "@/types";
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const parsed = registerSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json<ApiResponse<never>>(
+        { success: false, error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { name, email, password } = parsed.data;
+
+    const existing = await db.user.findUnique({ where: { email } });
+    if (existing) {
+      return NextResponse.json<ApiResponse<never>>(
+        { success: false, error: "An account with this email already exists" },
+        { status: 409 }
+      );
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const user = await db.user.create({
+      data: { name, email, passwordHash },
+      select: { id: true, name: true, email: true, role: true },
+    });
+
+    return NextResponse.json<ApiResponse<typeof user>>(
+      { success: true, data: user },
+      { status: 201 }
+    );
+  } catch {
+    return NextResponse.json<ApiResponse<never>>(
+      { success: false, error: "Something went wrong" },
+      { status: 500 }
+    );
+  }
+}

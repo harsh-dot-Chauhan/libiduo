@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --dark:  #0D0608;
+  --mid:   #1A0C10;
+  --bur:   #6B1A2A;
+  --bur-l: #8B2A3E;
+  --gold:  #C9973A;
+  --cream: #F5EDD8;
+  --text:  #F0E6D3;
+  --muted: #B8A99A;
+  --border: rgba(201,151,58,0.2);
+  --background: #0D0608;
+  --foreground: #F0E6D3;
+}
+
+body {
+  background: var(--dark);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+}
+
+@layer components {
+  .input {
+    @apply block w-full rounded-md px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1;
+    background: rgba(13,6,8,0.6);
+    border: 0.5px solid rgba(201,151,58,0.35);
+    color: var(--text);
+    focus-ring-color: var(--gold);
+  }
+  .input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold);
+  }
+  .input::placeholder { color: var(--muted); }
+  select.input option { background: var(--mid); color: var(--text); }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 18s linear infinite; }
