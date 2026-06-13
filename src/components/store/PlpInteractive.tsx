@@ -93,11 +93,9 @@ function parseTags(raw: string | null): string[] {
 
 function ProductCardItem({
   product,
-  onQuickView,
   onAddToCart,
 }: {
   product: PlpProduct;
-  onQuickView: (p: PlpProduct) => void;
   onAddToCart: (p: PlpProduct) => void;
 }) {
   const images = parseImages(product.images);
@@ -106,14 +104,16 @@ function ProductCardItem({
   const badge = product.badge ? BADGE_STYLES[product.badge] : null;
 
   return (
-    <div
+    <Link
+      href={`/products/${product.slug}`}
       style={{
+        display: "block",
         background: C.mid, border: `0.5px solid ${C.border}`,
         borderRadius: 16, overflow: "hidden", cursor: "pointer",
         transition: "all 0.25s", position: "relative",
+        textDecoration: "none",
       }}
       className="product-plp-card"
-      onClick={() => onQuickView(product)}
     >
       {/* Image area */}
       <div style={{
@@ -198,7 +198,7 @@ function ProductCardItem({
           {product.stock === 0 ? "Sold Out" : "Add to Cart"}
         </button>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -779,7 +779,6 @@ export default function PlpInteractive({ initialProducts, categories, initialTot
               <ProductCardItem
                 key={p.id}
                 product={p}
-                onQuickView={setQuickView}
                 onAddToCart={handleAddToCart}
               />
             ))}
