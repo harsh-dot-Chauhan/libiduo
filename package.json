@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "SKIP_ENV_VALIDATION=1 next build",
     "start": "next start",
+    "start:prod": "NODE_ENV=production node server.js",
+    "deploy": "npm install && npm run build && npx prisma migrate deploy",
     "lint": "next lint"
   },
   "dependencies": {
