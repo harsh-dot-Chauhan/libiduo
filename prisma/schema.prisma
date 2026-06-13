@@ -137,6 +137,12 @@ model Review {
   createdAt DateTime @default(now())
 }
 
+model CartSession {
+  key       String   @id
+  items     String   @db.LongText
+  updatedAt DateTime @updatedAt
+}
+
 enum Role {
   USER
   ADMIN

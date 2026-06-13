@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 };
 
 const B = "#6B1A2A";
-const BL = "#8B2A3E";
 const GOLD = "#C9973A";
 const CREAM = "#F5EDD8";
 const DARK = "#0D0608";

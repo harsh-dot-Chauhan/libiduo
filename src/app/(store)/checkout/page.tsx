@@ -80,7 +80,7 @@ export default function CheckoutPage() {
         <p style={{ fontSize: 10, letterSpacing: 4, textTransform: "uppercase", color: GOLD, marginBottom: 8 }}>Complete your</p>
         <h1 style={{ fontFamily: "var(--font-playfair), serif", fontSize: "clamp(24px,4vw,36px)", fontWeight: 700, color: TEXT, marginBottom: 32 }}>Checkout</h1>
 
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }} className="lg:grid-cols-checkout">
+        <form onSubmit={handleSubmit(onSubmit)} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }} className="lg:grid-cols-[1fr_380px]">
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {/* Shipping */}
             <div style={{ background: MID, border: "0.5px solid rgba(201,151,58,0.2)", borderRadius: 16, padding: 24 }}>

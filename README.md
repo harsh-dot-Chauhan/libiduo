@@ -1,272 +1,204 @@
+# Libiduo — E-Commerce Store
 
-## What We Are Building
-
-A full-stack e-commerce web application built from scratch. The store will have fewer than 100 products at launch, targeting 500–5,000 visitors per month. The goal is a fast, mobile-friendly shopping experience with a working checkout, order management, and an admin panel to manage products and orders.
-
-This is a real production application, not a prototype. Every decision should prioritise simplicity, low cost, and the ability to scale later without rewriting.
+A full-stack e-commerce web application for the Libiduo brand. Built for production from day one — fewer than 100 products at launch, targeting 500–5,000 visitors per month, dark luxury design, fully mobile-first.
 
 ---
 
-## Hosting & Infrastructure
+## Live Stack
 
 | Layer | Service | Notes |
 |---|---|---|
-| Hosting | Hostinger Cloud (Node.js) | Already purchased — persistent Node.js process, no cold starts |
-| Database | MySQL | Built into Hostinger Cloud plan — use localhost connection |
-| Cache / Sessions | Upstash Redis | Free tier (HTTP-based Redis, works without a server process) |
-| Image storage | Cloudinary | Free tier — 25 GB storage, 25 GB bandwidth/month |
-| CDN + SSL + DNS | Cloudflare | Free plan — point domain here, handles HTTPS automatically |
-| Payments | COD (v1) → Stripe (v2) | Cash on Delivery at launch; Stripe integration planned for v2 |
-| Email | Resend | Free tier — 3,000 transactional emails/month |
-| Auth (social) | Google OAuth | Free — via NextAuth.js |
-| CI/CD | GitHub Actions | Auto-deploy to Hostinger via SSH on every push to main |
-| Process manager | PM2 | Keeps Next.js alive, restarts on crash, cluster mode for all CPU cores |
+| Hosting | Hostinger Cloud (Node.js) | Persistent Node.js process, no cold starts |
+| Database | MySQL | Localhost connection on Hostinger — no external latency |
+| Cache / Cart | Upstash Redis | HTTP-based Redis (no server process needed); auto-falls back to MySQL if not configured |
+| Image storage | Cloudinary | 25 GB free tier; auto-falls back to local `/public/uploads/` if not configured |
+| CDN + SSL + DNS | Cloudflare | Free plan — DNS points here, handles HTTPS automatically |
+| Payments | COD (v1) → Stripe (v2) | Cash on Delivery at launch; Stripe wired but not active |
+| Email | Resend | Transactional emails — order confirmation, shipping update |
+| Auth | NextAuth.js v5 | Google OAuth + email/password credentials |
+| Process manager | PM2 | Cluster mode, auto-restart on crash |
 
-**Monthly cost: only the Hostinger Cloud plan + domain (~$10–12/year). Everything else is free tier.**
-
-No AWS, no Kubernetes, no Docker required. The architecture is designed to run as a single persistent Node.js process on one server.
+**Monthly cost: Hostinger Cloud plan + domain only. Everything else is free tier.**
 
 ---
 
 ## Tech Stack
 
-### Frontend
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS with custom design tokens
-- **State (client):** Zustand — for cart, auth, UI state
-- **State (server):** React Query (TanStack Query) — for products, orders, caching
-- **Forms:** React Hook Form + Zod validation
-- **HTTP client:** Axios
-- **Auth:** NextAuth.js (credentials + Google OAuth)
-- **Payments frontend:** Stripe.js
-- **Image handling:** Next.js Image component — WebP, lazy loading
-- **Icons:** Lucide React
+**Frontend**
+- Next.js 14 (App Router) · TypeScript · Tailwind CSS
+- Zustand — cart state and drawer UI
+- TanStack Query — server data caching
+- React Hook Form + Zod — all form validation
+- Axios · Lucide React · `next/image`
 
-### Backend
-- **Runtime:** Node.js 20 (persistent — not serverless)
-- **Framework:** Next.js API routes (App Router route handlers) — no separate Express server needed
-- **ORM:** Prisma — type-safe MySQL queries, migrations
-- **Auth:** NextAuth.js with JWT + refresh tokens
-- **Validation:** Zod on every API route
-- **Payments:** Stripe Node.js SDK
-- **Email:** Resend SDK
-- **Cache:** Upstash Redis SDK (`@upstash/redis`)
-- **File uploads:** Cloudinary SDK
+**Backend**
+- Next.js API route handlers (no separate Express)
+- Prisma ORM — type-safe MySQL, migrations
+- NextAuth.js v5 — JWT sessions
+- Zod validation on every API route
+- Resend SDK — transactional email
+- Cloudinary SDK — product image uploads
+- Upstash Redis SDK — cart sessions
 
-### Database
-- **Engine:** MySQL (via Prisma ORM)
-- **Host:** `localhost` (same server as app — fast, no external latency)
+**Database:** MySQL via Prisma, hosted on the same Hostinger server.
 
 ---
 
-## Architecture Pattern
-
-**Modular monolith** — one Next.js application, structured by feature module. This is not microservices. Each module (auth, products, orders, payments, notifications) is a self-contained folder. We can split into separate services later if needed, but for launch this is the correct approach.
+## Project Structure
 
 ```
 /src
-  /app                        ← Next.js App Router pages and API routes
+  /app
     /api
-      /auth/[...nextauth]/    ← NextAuth handler
-      /products/              ← Product CRUD
-      /cart/                  ← Cart operations
-      /orders/                ← Order management
-      /payments/              ← Stripe intents and webhooks
-      /admin/                 ← Admin-only routes (protected)
-    /(store)                  ← Public storefront pages
-      /page.tsx               ← Homepage
-      /products/
-      /products/[slug]/
-      /cart/
-      /checkout/
-      /orders/
-      /account/
-    /(admin)                  ← Admin panel pages (protected)
-      /dashboard/
-      /products/
-      /orders/
+      /auth/[...nextauth]/      NextAuth handler
+      /auth/register/           Email/password registration
+      /products/                Product list + single product (GET/POST/PUT/DELETE)
+      /products/[slug]/reviews/ Product reviews (GET/POST/DELETE)
+      /cart/                    Cart read + add item
+      /cart/[itemId]/           Cart update quantity + remove item
+      /orders/                  Create order + list user orders
+      /orders/[id]/             Single order detail
+      /admin/categories/        Admin — category CRUD
+      /admin/orders/            Admin — list all orders + update status
+      /admin/upload/            Admin — image upload (Cloudinary or local)
+    /(landing)/page.tsx         Landing / marketing homepage
+    /(store)
+      /products/                Product listing with filters + pagination
+      /products/[slug]/         Product detail — gallery, add to cart, reviews
+      /cart/                    Cart page
+      /checkout/                Checkout — address + COD order
+      /orders/                  User order history
+      /orders/[id]/             Order detail + status
+      /account/                 Profile + address management
+      /login/                   Login page
+      /register/                Registration page
+    /(admin)
+      /admin/                   Dashboard
+      /admin/products/          Product list
+      /admin/products/new/      Create product
+      /admin/products/[id]/edit Edit product
+      /admin/categories/        Category management (parent/child hierarchy)
+      /admin/orders/            Order list + status management
+
   /components
-    /ui/                      ← Reusable primitives (Button, Input, Badge…)
-    /store/                   ← Store-specific components (ProductCard, CartDrawer…)
-    /admin/                   ← Admin-specific components
-    /layout/                  ← Navbar, Footer, MobileNav
+    /admin/
+      CategoryManager           Parent/child category CRUD UI
+      ProductForm               Product create/edit form with image upload
+      OrderStatusSelect         Inline order status update
+    /store/
+      AddToCartButton           Add to cart + loading state
+      CartDrawer                Slide-in cart drawer (Zustand-driven)
+      FilterSidebar             Category + price range filters
+      ProductCard               Product thumbnail card
+      ProductGrid               Responsive product grid
+      ProductImageGallery       Product detail image switcher
+      ReviewForm                Star rating + comment submission
+      DeleteReviewButton        Remove own review
+      SortSelect                Price/date sort dropdown
+    /layout/
+      Navbar                    Store navbar with cart icon + session
+      LandingNavbar             Landing page navbar
+      Providers                 TanStack Query + session providers
+    /ui/
+      Pagination                Page-based pagination control
+
   /lib
-    /db.ts                    ← Prisma client singleton
-    /redis.ts                 ← Upstash Redis client
-    /stripe.ts                ← Stripe client
-    /cloudinary.ts            ← Cloudinary config
-    /auth.ts                  ← NextAuth config
-    /validations/             ← Zod schemas
-  /hooks/                     ← Custom React hooks
-  /store/                     ← Zustand stores
-  /types/                     ← Global TypeScript types
+    auth.ts                     NextAuth config (Google + credentials)
+    cart.ts                     Cart operations — Redis primary, MySQL fallback
+    cloudinary.ts               Cloudinary client config
+    db.ts                       Prisma client singleton
+    email.ts                    Resend send wrapper
+    env.ts                      Typed + validated env variables (Zod)
+    redis.ts                    Upstash Redis client (lazy init)
+    resend.ts                   Resend client singleton
+    stripe.ts                   Stripe client
+    /emails/
+      order-confirmation.ts     Order confirmation email template
+      shipping-update.ts        Shipping update email template
+    /validations/
+      auth.ts · cart.ts · category.ts · order.ts · product.ts · review.ts
+
+  /store
+    cart-store.ts               Zustand cart store (fetchCart, addItem, updateItem, removeItem)
+
+  /types
+    cart.ts                     CartItem, Cart types
+    index.ts                    ApiResponse<T>, shared types
+
+  /middleware.ts                Route protection — admin guard, auth redirect
+
 /prisma
-  /schema.prisma              ← Database schema
-  /migrations/                ← Auto-generated migrations
+  schema.prisma                 Full DB schema (see below)
+  /migrations/                  Auto-generated migration history
 ```
 
 ---
 
-## Database Schema (Prisma / MySQL)
+## Database Schema
 
 ```prisma
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  passwordHash  String?
-  name          String?
-  role          Role      @default(USER)
-  addresses     Address[]
-  orders        Order[]
-  reviews       Review[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?
-}
-
-model Product {
-  id          String        @id @default(cuid())
-  name        String
-  slug        String        @unique
-  description String        @db.Text
-  price       Decimal       @db.Decimal(10, 2)
-  stock       Int           @default(0)
-  images      String        @db.Text   // JSON array of Cloudinary URLs
-  tags        String?                  // JSON array
-  categoryId  String
-  category    Category      @relation(fields: [categoryId], references: [id])
-  orderItems  OrderItem[]
-  reviews     Review[]
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  deletedAt   DateTime?
-}
-
-model Category {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String     @unique
-  products  Product[]
-}
-
-model Order {
-  id              String      @id @default(cuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id])
-  items           OrderItem[]
-  status          OrderStatus @default(PENDING)
-  total           Decimal     @db.Decimal(10, 2)
-  shippingAddress Json
-  payment         Payment?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-}
-
-model OrderItem {
-  id         String   @id @default(cuid())
-  orderId    String
-  order      Order    @relation(fields: [orderId], references: [id])
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  quantity   Int
-  unitPrice  Decimal  @db.Decimal(10, 2)
-}
-
-model Payment {
-  id              String        @id @default(cuid())
-  orderId         String        @unique
-  order           Order         @relation(fields: [orderId], references: [id])
-  stripeIntentId  String        @unique
-  amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("inr")
-  status          PaymentStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-}
-
-model Address {
-  id         String  @id @default(cuid())
-  userId     String
-  user       User    @relation(fields: [userId], references: [id])
-  line1      String
-  line2      String?
-  city       String
-  state      String
-  pincode    String
-  isDefault  Boolean @default(false)
-}
-
-model Review {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  productId  String
-  product    Product  @relation(fields: [productId], references: [id])
-  rating     Int
-  comment    String?  @db.Text
-  createdAt  DateTime @default(now())
-}
-
-enum Role          { USER ADMIN }
-enum OrderStatus   { PENDING CONFIRMED SHIPPED DELIVERED CANCELLED RETURNED }
-enum PaymentStatus { PENDING PAID FAILED REFUNDED }
+model User          { id, email, passwordHash?, name?, role(USER|ADMIN), addresses, orders, reviews, createdAt, updatedAt, deletedAt? }
+model Account       { NextAuth OAuth accounts linked to User }
+model VerificationToken { NextAuth email verification }
+model Product       { id, name, slug, description, price(Decimal), stock, images(JSON), tags(JSON?), categoryId, isActive, createdAt, updatedAt, deletedAt? }
+model Category      { id, name, slug, parentId? (self-relation — supports parent/child hierarchy), products[] }
+model CartSession    { key (cart:user:id or cart:guest:guestId), items(JSON), updatedAt }
+model Order         { id, userId, items[], status(PENDING→CONFIRMED→SHIPPED→DELIVERED→CANCELLED→RETURNED), total(Decimal), shippingAddress(JSON), payment?, createdAt, updatedAt }
+model OrderItem     { id, orderId, productId, quantity, unitPrice(Decimal) }
+model Payment       { id, orderId, method(COD|STRIPE), stripeIntentId?, amount, currency(inr), status(PENDING|PAID|FAILED|REFUNDED) }
+model Address       { id, userId, line1, line2?, city, state, pincode, isDefault }
+model Review        { id, userId, productId, rating(1-5), comment?, createdAt }
 ```
 
 ---
 
-## API Routes
+## API Reference
 
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| POST | /api/auth/register | Public | Create account |
-| POST | /api/auth/[...nextauth] | Public | NextAuth login/logout |
-| GET | /api/products | Public | List products (with filters, pagination) |
-| GET | /api/products/[slug] | Public | Single product |
-| POST | /api/products | Admin | Create product |
-| PUT | /api/products/[slug] | Admin | Update product |
-| DELETE | /api/products/[slug] | Admin | Soft delete product |
-| GET | /api/cart | User | Get cart (from Redis) |
-| POST | /api/cart | User | Add item to cart |
-| PUT | /api/cart/[itemId] | User | Update cart item quantity |
-| DELETE | /api/cart/[itemId] | User | Remove cart item |
-| POST | /api/orders | User | Create order from cart |
-| GET | /api/orders | User | List user's orders |
-| GET | /api/orders/[id] | User | Single order |
-| POST | /api/payments/intent | User | Create Stripe payment intent (v2) |
-| POST | /api/payments/webhook | Public | Stripe webhook — confirm payment (v2) |
-| GET | /api/admin/orders | Admin | All orders |
-| PUT | /api/admin/orders/[id] | Admin | Update order status |
+| POST | `/api/auth/register` | Public | Create account with email + password |
+| * | `/api/auth/[...nextauth]` | Public | NextAuth — login, logout, OAuth callback |
+| GET | `/api/products` | Public | List products (filters: category, price, search; sort; pagination) |
+| GET | `/api/products/[slug]` | Public | Single product detail |
+| POST | `/api/products` | Admin | Create product |
+| PUT | `/api/products/[slug]` | Admin | Update product |
+| DELETE | `/api/products/[slug]` | Admin | Soft-delete product |
+| GET | `/api/products/[slug]/reviews` | Public | List reviews for product |
+| POST | `/api/products/[slug]/reviews` | User | Submit review |
+| DELETE | `/api/products/[slug]/reviews/[reviewId]` | User/Admin | Delete review |
+| GET | `/api/cart` | Public | Get cart (by session or guest cookie) |
+| POST | `/api/cart` | Public | Add item to cart |
+| PUT | `/api/cart/[itemId]` | Public | Update cart item quantity |
+| DELETE | `/api/cart/[itemId]` | Public | Remove cart item |
+| POST | `/api/orders` | User | Create order from cart |
+| GET | `/api/orders` | User | List current user's orders |
+| GET | `/api/orders/[id]` | User | Single order detail |
+| GET | `/api/admin/orders` | Admin | All orders (with filters) |
+| PUT | `/api/admin/orders/[id]` | Admin | Update order status |
+| GET | `/api/admin/categories` | Admin | List all categories |
+| POST | `/api/admin/categories` | Admin | Create category |
+| PUT | `/api/admin/categories/[id]` | Admin | Update category |
+| DELETE | `/api/admin/categories/[id]` | Admin | Delete category |
+| POST | `/api/admin/upload` | Admin | Upload product image |
 
 ---
 
-## Key Pages
+## Cart Architecture
 
-| Route | Description |
-|---|---|
-| `/` | Homepage — hero banner, featured products, categories |
-| `/products` | Product listing with filter sidebar (category, price range, sort) |
-| `/products/[slug]` | Product detail — images, description, add to cart, reviews |
-| `/cart` | Cart page |
-| `/checkout` | Checkout form — address + Stripe payment |
-| `/orders` | User's order history |
-| `/orders/[id]` | Order detail + status tracking |
-| `/account` | Profile, addresses, password change |
-| `/admin` | Admin dashboard |
-| `/admin/products` | Product management — create, edit, delete |
-| `/admin/orders` | Order management — view, update status |
+Cart uses **Upstash Redis as primary** and **MySQL as automatic fallback** — no configuration change needed to switch.
+
+- **Key format:** `cart:user:<userId>` for logged-in users, `cart:guest:<guestId>` for guests
+- Guest cart ID is stored in an `httpOnly` cookie (`gid`), 30-day expiry
+- On login, guest cart is merged into the user cart
+- All cart state on the client is managed by Zustand (`src/store/cart-store.ts`)
+- Cart drawer opens automatically after adding an item
 
 ---
 
-## Mobile-First Rules
+## Image Uploads
 
-- All layouts built mobile-first, then adapted for desktop
-- Minimum touch target size: 48×48px
-- Bottom navigation bar on mobile (Home, Categories, Cart, Account)
-- Cart as slide-in drawer on mobile, sidebar on desktop
-- Product grid: 1 column on mobile, 2 on tablet, 3–4 on desktop
-- All images: WebP format, lazy loaded, aspect ratio preserved to prevent layout shift
-- Sticky add-to-cart button on product detail page on mobile
+- **With Cloudinary configured:** uploaded to `libiduo/products/` folder, auto-transformed to 1200×1200 max, WebP/auto format
+- **Without Cloudinary:** saved to `public/uploads/products/` and served as static files — useful for local development
 
 ---
 
@@ -274,117 +206,92 @@ enum PaymentStatus { PENDING PAID FAILED REFUNDED }
 
 ```env
 # Database (MySQL on localhost)
-DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/ecom_db"
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/libiduo_dev"
 
 # NextAuth
 NEXTAUTH_SECRET="your-random-32-char-secret"
-NEXTAUTH_URL="https://yourdomain.com"
+NEXTAUTH_URL="http://localhost:3000"
 
 # Google OAuth
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 
-# Upstash Redis
+# Upstash Redis (optional — falls back to MySQL if empty)
 UPSTASH_REDIS_REST_URL=""
 UPSTASH_REDIS_REST_TOKEN=""
 
-# Cloudinary
+# Cloudinary (optional — falls back to local /public/uploads/ if empty)
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=""
 CLOUDINARY_API_KEY=""
 CLOUDINARY_API_SECRET=""
 
-# Stripe
+# Stripe (v2 — leave empty for COD-only launch)
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
 STRIPE_SECRET_KEY=""
 STRIPE_WEBHOOK_SECRET=""
 
-# Resend (email)
+# Resend (transactional email)
 RESEND_API_KEY=""
 FROM_EMAIL="noreply@yourdomain.com"
 ```
 
 ---
 
-## Deployment
+## Local Development
 
-- **Server:** Hostinger Cloud with Node.js
-- **Process manager:** PM2 (`pm2 start ecosystem.config.js`)
-- **Reverse proxy:** Nginx (configured via Hostinger hPanel) — port 3000 → 80/443
-- **SSL:** Cloudflare (free) — domain DNS points to Cloudflare, proxied to Hostinger
-- **CI/CD:** GitHub Actions — SSH into server on push to `main`, runs `git pull → npm install → npm run build → pm2 reload`
+```bash
+# Install dependencies
+npm install
 
----
+# Set up the database
+npx prisma migrate dev
 
-## SEO Strategy
+# Start dev server
+npm run dev
+```
 
-Every page targets a high Lighthouse SEO score (90+). The approach:
-
-### Metadata (Next.js App Router)
-- **Root layout** sets `metadataBase`, default `title` template (`%s | Libiduo`), global `description`, `openGraph`, and `twitter` card defaults
-- **Static pages** (`/products`, `/orders`) export a `metadata` const
-- **Dynamic pages** (`/products/[slug]`) use `generateMetadata()` to pull real product name, description, and first image from the DB
-- Private pages (`/checkout`, `/orders`, `/account`) are marked `robots: { index: false }` — Google won't index them
-
-### Structured Data (JSON-LD)
-- Every product detail page injects a `<script type="application/ld+json">` with `schema.org/Product` including:
-  - `name`, `description`, `image`, `sku`
-  - `Offer` block: price, currency (INR), `InStock`/`OutOfStock`
-  - `AggregateRating` block (when reviews exist) — enables Google star snippets in search results
-
-### Sitemap & Robots
-- `app/sitemap.ts` — dynamically generated; includes homepage, `/products`, all category filter URLs, and every active product slug with `lastModified` timestamps
-- `app/robots.ts` — blocks `admin/`, `api/`, `checkout`, `orders`, `account`, `cart` from indexing; points to sitemap
-
-### OpenGraph & Social Sharing
-- Product pages include OG image (first product image, 1200×1200), title, and description
-- Facebook `product:price:amount` + `product:price:currency` meta tags on product pages
-- Twitter `summary_large_image` card on product pages
-
-### Core Web Vitals (built-in)
-- All images use `next/image` — automatic WebP conversion, lazy loading, `sizes` attribute, no layout shift
-- Fonts loaded via `next/font/local` — zero render-blocking
-- Server Components by default — minimal JS sent to client
-- Milestone 10 adds a full Lighthouse audit before launch
+The app runs on `http://localhost:3000`. Redis and Cloudinary are optional — the app falls back to MySQL for cart storage and local disk for image uploads when those env vars are empty.
 
 ---
 
-## What NOT to Build (out of scope for launch)
+## Deployment (Hostinger)
 
-- Mobile app (React Native) — add later
-- Elasticsearch / full-text search — use MySQL LIKE queries for now, add later
-- Microservices / Docker / Kubernetes — not needed at this scale
-- Wishlist — nice to have, not for v1
-- Discount codes / coupons — add in v2
-- Multi-vendor / marketplace — not in scope
+1. Push to `main` — GitHub Actions SSHs into the server
+2. `git pull && npm install && npm run build`
+3. `pm2 reload libiduo` — zero-downtime restart
+4. Nginx proxies port 3000 → 80/443; Cloudflare handles SSL + CDN
 
 ---
 
 ## Coding Conventions
 
 - TypeScript strict mode everywhere — no `any`
-- Zod schema for every API route input — validate before touching the database
-- Prisma for all database access — no raw SQL except for complex reporting queries
-- All API responses follow this shape:
-  ```ts
-  { success: true, data: T }
-  { success: false, error: string }
-  ```
-- Server Components by default in Next.js App Router — use `"use client"` only when needed
-- Environment variables accessed only through a typed `/src/lib/env.ts` module
-- Soft deletes on User and Product (`deletedAt` field) — never hard delete
-- All monetary values stored as `Decimal` in DB and handled in paise/cents as integers in code to avoid floating point issues
+- Zod schema validates every API route input before touching the database
+- All API responses follow `{ success: true, data: T }` / `{ success: false, error: string }`
+- Prisma for all DB access — no raw SQL
+- Server Components by default; `"use client"` only when required
+- All env vars accessed through typed `src/lib/env.ts` — fails at startup if required vars are missing
+- Soft deletes on User and Product (`deletedAt`) — never hard delete
+- Monetary values stored as `Decimal(10,2)` in DB
 
 ---
 
-## Build Order
+## What's Built vs. Planned
 
-1. Project scaffold + Prisma schema + DB migration + env setup
-2. Auth — register, login, Google OAuth, session
-3. Product catalog — list, detail, admin CRUD + Cloudinary upload
-4. Cart — Redis-based guest and user cart
-5. Checkout + COD order creation (Stripe deferred to v2)
-6. Order history and status pages
-7. Admin panel — orders and products management
-8. Email notifications — order confirmation, shipping update
-9. Reviews + ratings
-10. Performance — image optimisation, caching headers, Core Web Vitals audit
+| Feature | Status |
+|---|---|
+| Auth — email/password + Google OAuth | Done |
+| Product catalog — list, detail, filters, sort, pagination | Done |
+| Admin — product CRUD + image upload | Done |
+| Admin — category management (parent/child) | Done |
+| Cart — Redis + MySQL fallback, guest + user | Done |
+| Orders — create, list, detail | Done |
+| Admin — order list + status management | Done |
+| Reviews — submit, display, delete | Done |
+| Email — order confirmation + shipping update templates | Done (Resend wired, send logic ready) |
+| Checkout — COD flow | Done |
+| Payments — Stripe | Planned (v2) |
+| Discount codes / coupons | Planned (v2) |
+| Wishlist | Planned (v2) |
+| Full-text search (Elasticsearch) | Planned (later) |
+| Mobile app | Not in scope |

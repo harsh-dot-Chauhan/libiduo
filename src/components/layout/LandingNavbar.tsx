@@ -9,8 +9,6 @@ import { useState } from "react";
 const GOLD = "#C9973A";
 const MUTED = "#B8A99A";
 const DARK = "#0D0608";
-const CREAM = "#F5EDD8";
-const BUR = "#6B1A2A";
 
 export default function LandingNavbar() {
   const { count, openDrawer } = useCartStore();

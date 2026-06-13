@@ -29,7 +29,7 @@ function LoginForm() {
     const result = await signIn("credentials", { redirect: false, email, password });
     setLoading(false);
     if (result?.error) setError("Invalid email or password.");
-    else { router.push(callbackUrl); router.refresh(); }
+    else router.push(callbackUrl);
   }
 
   const inputStyle: React.CSSProperties = {

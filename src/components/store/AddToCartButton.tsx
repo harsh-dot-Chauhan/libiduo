@@ -9,7 +9,6 @@ const DARK = "#0D0608";
 const BUR = "#6B1A2A";
 const CREAM = "#F5EDD8";
 const MUTED = "#B8A99A";
-const MID = "#1A0C10";
 
 type CartProduct = { id: string; name: string; price: number; image: string; stock: number };
 

@@ -6,7 +6,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const GOLD = "#C9973A";
 const MUTED = "#B8A99A";
 const MID = "#1A0C10";
-const TEXT = "#F0E6D3";
 
 export default function Pagination({ currentPage, totalPages }: { currentPage: number; totalPages: number }) {
   const router = useRouter();

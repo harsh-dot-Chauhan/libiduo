@@ -27,7 +27,7 @@ export default function FilterSidebar({ categories }: { categories: Category[] }
 
   const updateParam = useCallback((key: string, value: string | undefined) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.delete("page");
     router.push(`/products?${params.toString()}`);
   }, [router, searchParams]);
@@ -87,7 +87,7 @@ export default function FilterSidebar({ categories }: { categories: Category[] }
                     } else {
                       const p = new URLSearchParams(searchParams.toString());
                       p.set("minPrice", String(range.min));
-                      range.max !== undefined ? p.set("maxPrice", String(range.max)) : p.delete("maxPrice");
+                      if (range.max !== undefined) { p.set("maxPrice", String(range.max)); } else { p.delete("maxPrice"); }
                       p.delete("page");
                       router.push(`/products?${p.toString()}`);
                     }
