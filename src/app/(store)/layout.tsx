@@ -1,5 +1,6 @@
 import LandingNavbar from "@/components/layout/LandingNavbar";
 import CartDrawer from "@/components/store/CartDrawer";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,6 +8,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <LandingNavbar />
       <CartDrawer />
       <main>{children}</main>
+      <WhatsAppButton />
     </>
   );
 }
