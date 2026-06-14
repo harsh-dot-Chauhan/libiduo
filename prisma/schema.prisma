@@ -121,6 +121,8 @@ model Address {
   id        String  @id @default(cuid())
   userId    String
   user      User    @relation(fields: [userId], references: [id])
+  name      String
+  phone     String
   line1     String
   line2     String?
   city      String

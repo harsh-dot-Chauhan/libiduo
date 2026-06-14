@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -38,24 +38,95 @@ const labelStyle: React.CSSProperties = {
   display: "block", fontSize: 11, color: MUTED, letterSpacing: 1, textTransform: "uppercase",
 };
 
+type SavedAddress = {
+  id: string;
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { status } = useSession();
   const { items, total, fetchCart } = useCartStore();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
   useEffect(() => { if (status === "unauthenticated") router.push("/login?callbackUrl=/checkout"); }, [status, router]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<PlaceOrderInput>({
+  const fetchAddresses = useCallback(async () => {
+    try {
+      const res = await axios.get<{ success: boolean; data: SavedAddress[] }>("/api/addresses");
+      const addrs = res.data.data;
+      setSavedAddresses(addrs);
+      if (addrs.length > 0) {
+        const def = addrs.find((a) => a.isDefault) ?? addrs[0];
+        setSelectedAddressId(def.id);
+        setShowNewForm(false);
+      } else {
+        setShowNewForm(true);
+      }
+    } catch {
+      setShowNewForm(true);
+    }
+  }, []);
+
+  useEffect(() => { if (status === "authenticated") fetchAddresses(); }, [status, fetchAddresses]);
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<PlaceOrderInput>({
     resolver: zodResolver(placeOrderSchema) as Resolver<PlaceOrderInput>,
     defaultValues: { paymentMethod: "COD" },
   });
 
+  const fillForm = (addr: SavedAddress) => {
+    setValue("shippingAddress.name", addr.name);
+    setValue("shippingAddress.phone", addr.phone);
+    setValue("shippingAddress.line1", addr.line1);
+    setValue("shippingAddress.line2", addr.line2 ?? "");
+    setValue("shippingAddress.city", addr.city);
+    setValue("shippingAddress.state", addr.state);
+    setValue("shippingAddress.pincode", addr.pincode);
+  };
+
+  const handleSelectAddress = (addr: SavedAddress) => {
+    setSelectedAddressId(addr.id);
+    setShowNewForm(false);
+    fillForm(addr);
+  };
+
+  const handleDeleteAddress = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await axios.delete(`/api/addresses/${id}`);
+      await fetchAddresses();
+    } catch {
+      // ignore
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const onSubmit = async (data: PlaceOrderInput) => {
     setSubmitting(true); setError(null);
     try {
+      // If adding a new address and save is checked, save it first
+      if (showNewForm && saveAddress) {
+        await axios.post("/api/addresses", {
+          ...data.shippingAddress,
+          isDefault: savedAddresses.length === 0,
+        });
+      }
       const res = await axios.post<{ success: boolean; data: { id: string } }>("/api/orders", data);
       if (res.data.success) router.push(`/orders/${res.data.data.id}?placed=1`);
     } catch (e) {
@@ -82,51 +153,135 @@ export default function CheckoutPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }} className="lg:grid-cols-[1fr_380px]">
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Shipping */}
+
+            {/* ── Shipping Address ── */}
             <div style={{ background: MID, border: "0.5px solid rgba(201,151,58,0.2)", borderRadius: 16, padding: 24 }}>
               <h2 style={{ fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: GOLD, marginBottom: 20 }}>📍 Shipping Address</h2>
 
               {error && <p style={{ background: "rgba(107,26,42,0.3)", border: "0.5px solid rgba(107,26,42,0.5)", color: "#E8A0A8", padding: "12px 16px", borderRadius: 10, fontSize: 13, marginBottom: 16 }}>{error}</p>}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>Full name</label>
-                  <input {...register("shippingAddress.name")} style={inputStyle} />
-                  {errors.shippingAddress?.name && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.name.message}</p>}
+              {/* Saved address cards */}
+              {savedAddresses.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
+                  {savedAddresses.map((addr) => {
+                    const selected = selectedAddressId === addr.id && !showNewForm;
+                    return (
+                      <div
+                        key={addr.id}
+                        style={{
+                          border: selected ? `1px solid ${GOLD}` : "0.5px solid rgba(201,151,58,0.2)",
+                          borderRadius: 12,
+                          padding: "14px 16px",
+                          background: selected ? "rgba(201,151,58,0.08)" : "rgba(13,6,8,0.4)",
+                          cursor: "pointer",
+                          transition: "border-color 0.15s",
+                        }}
+                        onClick={() => handleSelectAddress(addr)}
+                      >
+                        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                              {/* Radio dot */}
+                              <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${selected ? GOLD : MUTED}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                {selected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: GOLD }} />}
+                              </div>
+                              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>{addr.name}</span>
+                              {addr.isDefault && <span style={{ fontSize: 10, color: GOLD, background: "rgba(201,151,58,0.15)", border: `0.5px solid ${GOLD}`, borderRadius: 4, padding: "1px 6px", letterSpacing: 0.5 }}>Default</span>}
+                            </div>
+                            <p style={{ fontSize: 12, color: MUTED, marginLeft: 24, lineHeight: 1.5 }}>
+                              {addr.phone} · {addr.line1}{addr.line2 ? `, ${addr.line2}` : ""}, {addr.city}, {addr.state} – {addr.pincode}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteAddress(addr.id); }}
+                            disabled={deletingId === addr.id}
+                            style={{ fontSize: 11, color: "#E8A0A8", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", flexShrink: 0 }}
+                          >
+                            {deletingId === addr.id ? "…" : "Remove"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Add new address toggle */}
+                  <div
+                    style={{
+                      border: showNewForm ? `1px solid ${GOLD}` : "0.5px solid rgba(201,151,58,0.2)",
+                      borderRadius: 12,
+                      padding: "14px 16px",
+                      background: showNewForm ? "rgba(201,151,58,0.08)" : "rgba(13,6,8,0.4)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                    }}
+                    onClick={() => { setShowNewForm(true); setSelectedAddressId(null); }}
+                  >
+                    <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${showNewForm ? GOLD : MUTED}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {showNewForm && <div style={{ width: 8, height: 8, borderRadius: "50%", background: GOLD }} />}
+                    </div>
+                    <span style={{ fontSize: 13, color: showNewForm ? TEXT : MUTED, fontWeight: 500 }}>+ Add a new address</span>
+                  </div>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>Mobile number</label>
-                  <input {...register("shippingAddress.phone")} type="tel" style={inputStyle} placeholder="10-digit mobile" />
-                  {errors.shippingAddress?.phone && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.phone.message}</p>}
+              )}
+
+              {/* Address form — always visible when showNewForm, or when no saved addresses */}
+              {(showNewForm || savedAddresses.length === 0) && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>Full name</label>
+                    <input {...register("shippingAddress.name")} style={inputStyle} />
+                    {errors.shippingAddress?.name && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.name.message}</p>}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>Mobile number</label>
+                    <input {...register("shippingAddress.phone")} type="tel" style={inputStyle} placeholder="10-digit mobile" />
+                    {errors.shippingAddress?.phone && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.phone.message}</p>}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>Address line 1</label>
+                    <input {...register("shippingAddress.line1")} style={inputStyle} placeholder="House no., building, street" />
+                    {errors.shippingAddress?.line1 && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.line1.message}</p>}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>Address line 2 <span style={{ color: "#6B5A50" }}>(optional)</span></label>
+                    <input {...register("shippingAddress.line2")} style={inputStyle} placeholder="Area, colony, landmark" />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>City</label>
+                    <input {...register("shippingAddress.city")} style={inputStyle} />
+                    {errors.shippingAddress?.city && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.city.message}</p>}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Pincode</label>
+                    <input {...register("shippingAddress.pincode")} style={inputStyle} placeholder="6-digit pincode" maxLength={6} />
+                    {errors.shippingAddress?.pincode && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.pincode.message}</p>}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={labelStyle}>State</label>
+                    <select {...register("shippingAddress.state")} style={{ ...inputStyle, color: MUTED }}>
+                      <option value="" style={{ background: MID }}>Select state</option>
+                      {INDIAN_STATES.map((s) => <option key={s} value={s} style={{ background: MID, color: TEXT }}>{s}</option>)}
+                    </select>
+                    {errors.shippingAddress?.state && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.state.message}</p>}
+                  </div>
+
+                  {/* Save address checkbox */}
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={saveAddress}
+                        onChange={(e) => setSaveAddress(e.target.checked)}
+                        style={{ accentColor: GOLD, width: 16, height: 16 }}
+                      />
+                      <span style={{ fontSize: 12, color: MUTED }}>Save this address for future orders</span>
+                    </label>
+                  </div>
                 </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>Address line 1</label>
-                  <input {...register("shippingAddress.line1")} style={inputStyle} placeholder="House no., building, street" />
-                  {errors.shippingAddress?.line1 && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.line1.message}</p>}
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>Address line 2 <span style={{ color: "#6B5A50" }}>(optional)</span></label>
-                  <input {...register("shippingAddress.line2")} style={inputStyle} placeholder="Area, colony, landmark" />
-                </div>
-                <div>
-                  <label style={labelStyle}>City</label>
-                  <input {...register("shippingAddress.city")} style={inputStyle} />
-                  {errors.shippingAddress?.city && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.city.message}</p>}
-                </div>
-                <div>
-                  <label style={labelStyle}>Pincode</label>
-                  <input {...register("shippingAddress.pincode")} style={inputStyle} placeholder="6-digit pincode" maxLength={6} />
-                  {errors.shippingAddress?.pincode && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.pincode.message}</p>}
-                </div>
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>State</label>
-                  <select {...register("shippingAddress.state")} style={{ ...inputStyle, color: MUTED }}>
-                    <option value="" style={{ background: MID }}>Select state</option>
-                    {INDIAN_STATES.map((s) => <option key={s} value={s} style={{ background: MID, color: TEXT }}>{s}</option>)}
-                  </select>
-                  {errors.shippingAddress?.state && <p style={{ fontSize: 11, color: "#E8A0A8", marginTop: 4 }}>{errors.shippingAddress.state.message}</p>}
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Payment */}

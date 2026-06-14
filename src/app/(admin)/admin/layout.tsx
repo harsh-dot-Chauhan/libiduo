@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
-import { LayoutDashboard, Package, ShoppingBag, Tag, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Tag, Users, LogOut } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/categories", label: "Categories", icon: Tag },
 ];
