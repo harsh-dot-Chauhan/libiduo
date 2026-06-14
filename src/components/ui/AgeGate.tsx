@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 const B = "#6B1A2A";
 const GOLD = "#C9973A";
@@ -71,16 +72,8 @@ export default function AgeGate() {
         }}
       >
         {/* Logo */}
-        <div
-          style={{
-            fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-            fontSize: 22,
-            color: GOLD,
-            letterSpacing: 4,
-            marginBottom: 8,
-          }}
-        >
-          LIBIDUO
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+          <Image src="/logo-full.png" alt="Libiduo" width={160} height={46} style={{ objectFit: "contain" }} />
         </div>
 
         {/* 18+ badge */}

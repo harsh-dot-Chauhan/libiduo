@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useCartStore } from "@/store/cart-store";
 import {
   Search, X, SlidersHorizontal, ArrowUpDown, ShoppingBag,
-  Lock, Star, ChevronRight, Flame, Sparkles, ArrowUpNarrowWide,
+  Lock, Star, ChevronRight, Sparkles, ArrowUpNarrowWide,
   ArrowDownNarrowWide, TrendingUp,
 } from "lucide-react";
 
