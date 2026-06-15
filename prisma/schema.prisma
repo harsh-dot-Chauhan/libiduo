@@ -154,6 +154,7 @@ model Coupon {
   discountPct Int
   label       String
   isActive    Boolean   @default(true)
+  isPublic    Boolean   @default(false)
   expiresAt   DateTime?
   usageLimit  Int?
   usageCount  Int       @default(0)

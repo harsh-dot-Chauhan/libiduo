@@ -81,9 +81,17 @@ export default function CartPage() {
   const [giftWrap, setGiftWrap] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [recos, setRecos] = useState<RecoProduct[]>([]);
+  const [publicCoupons, setPublicCoupons] = useState<{ code: string; discountPct: number }[]>([]);
   const couponRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
+
+  useEffect(() => {
+    fetch("/api/coupons")
+      .then((r) => r.json())
+      .then((d) => { if (d.success) setPublicCoupons(d.data); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/products?limit=6")
@@ -308,6 +316,19 @@ export default function CartPage() {
               <div style={{ marginTop: 10, fontSize: 12, display: "flex", alignItems: "center", gap: 6, color: couponResult.ok ? "var(--green)" : "var(--red)" }}>
                 {couponResult.ok ? <CheckCircle size={14} /> : <XCircle size={14} />}
                 {couponResult.msg}
+              </div>
+            )}
+            {publicCoupons.length > 0 && (
+              <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {publicCoupons.map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => { setCouponCode(c.code); applyCoupon(c.code); }}
+                    style={{ padding: "6px 12px", border: "0.5px dashed rgba(201,151,58,0.4)", borderRadius: 20, fontSize: 11, color: "var(--gold)", cursor: "pointer", background: "none", letterSpacing: 0.5 }}
+                  >
+                    {c.code} — {c.discountPct}% off
+                  </button>
+                ))}
               </div>
             )}
           </>

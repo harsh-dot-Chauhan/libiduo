@@ -9,6 +9,7 @@ type Coupon = {
   discountPct: number;
   label: string;
   isActive: boolean;
+  isPublic: boolean;
   expiresAt: string | null;
   usageLimit: number | null;
   usageCount: number;
@@ -20,12 +21,13 @@ type FormState = {
   discountPct: string;
   label: string;
   isActive: boolean;
+  isPublic: boolean;
   expiresAt: string;
   usageLimit: string;
 };
 
 const EMPTY_FORM: FormState = {
-  code: "", discountPct: "", label: "", isActive: true, expiresAt: "", usageLimit: "",
+  code: "", discountPct: "", label: "", isActive: true, isPublic: false, expiresAt: "", usageLimit: "",
 };
 
 export default function AdminCouponsPage() {
@@ -61,6 +63,7 @@ export default function AdminCouponsPage() {
       discountPct: String(c.discountPct),
       label:       c.label,
       isActive:    c.isActive,
+      isPublic:    c.isPublic,
       expiresAt:   c.expiresAt ? c.expiresAt.slice(0, 10) : "",
       usageLimit:  c.usageLimit !== null ? String(c.usageLimit) : "",
     });
@@ -75,6 +78,7 @@ export default function AdminCouponsPage() {
       discountPct: parseInt(form.discountPct, 10),
       label:       form.label.trim(),
       isActive:    form.isActive,
+      isPublic:    form.isPublic,
       expiresAt:   form.expiresAt ? new Date(form.expiresAt).toISOString() : null,
       usageLimit:  form.usageLimit ? parseInt(form.usageLimit, 10) : null,
     };
@@ -170,15 +174,28 @@ export default function AdminCouponsPage() {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">Active</label>
-              <button
-                type="button"
-                onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
-                className={`text-2xl ${form.isActive ? "text-indigo-600" : "text-gray-400"}`}
-              >
-                {form.isActive ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
-              </button>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Active</label>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
+                  className={form.isActive ? "text-indigo-600" : "text-gray-400"}
+                >
+                  {form.isActive ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Show on cart</label>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
+                  className={form.isPublic ? "text-green-600" : "text-gray-400"}
+                  title="When enabled, this coupon code is shown as a suggestion on the cart page"
+                >
+                  {form.isPublic ? <ToggleRight size={28} /> : <ToggleLeft size={28} />}
+                </button>
+              </div>
             </div>
           </div>
           <div className="mt-5 flex gap-3">
@@ -215,6 +232,7 @@ export default function AdminCouponsPage() {
                 <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Label</th>
                 <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Usage</th>
                 <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Expires</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Visible</th>
                 <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">Status</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -233,6 +251,11 @@ export default function AdminCouponsPage() {
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-500">
                       {c.expiresAt ? new Date(c.expiresAt).toLocaleDateString("en-IN") : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${c.isPublic ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"}`}>
+                        {c.isPublic ? "Public" : "Private"}
+                      </span>
                     </td>
                     <td className="px-5 py-3">
                       {expired || limitHit ? (

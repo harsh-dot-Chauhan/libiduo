@@ -9,6 +9,7 @@ const createSchema = z.object({
   discountPct: z.number().int().min(1).max(100),
   label:       z.string().min(1).max(100),
   isActive:    z.boolean().optional().default(true),
+  isPublic:    z.boolean().optional().default(false),
   expiresAt:   z.string().datetime().optional().nullable(),
   usageLimit:  z.number().int().min(1).optional().nullable(),
 });

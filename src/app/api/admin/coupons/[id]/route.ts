@@ -9,6 +9,7 @@ const updateSchema = z.object({
   discountPct: z.number().int().min(1).max(100).optional(),
   label:       z.string().min(1).max(100).optional(),
   isActive:    z.boolean().optional(),
+  isPublic:    z.boolean().optional(),
   expiresAt:   z.string().datetime().nullable().optional(),
   usageLimit:  z.number().int().min(1).nullable().optional(),
 });
