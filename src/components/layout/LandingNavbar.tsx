@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, User, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useSession, signOut } from "next-auth/react";
@@ -12,9 +13,10 @@ const MUTED = "#B8A99A";
 const DARK = "#0D0608";
 
 export default function LandingNavbar() {
-  const { count, openDrawer } = useCartStore();
+  const { count } = useCartStore();
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <header style={{
@@ -44,7 +46,7 @@ export default function LandingNavbar() {
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {/* Cart */}
           <button
-            onClick={openDrawer}
+            onClick={() => router.push("/cart")}
             aria-label="Open cart"
             style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 8, color: MUTED, display: "flex", alignItems: "center", gap: 6 }}
           >

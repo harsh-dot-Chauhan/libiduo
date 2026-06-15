@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 
 export default function Navbar() {
-  const { count, openDrawer } = useCartStore();
+  const { count } = useCartStore();
+  const router = useRouter();
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -28,7 +30,7 @@ export default function Navbar() {
           </Link>
 
           <button
-            onClick={openDrawer}
+            onClick={() => router.push("/cart")}
             className="relative rounded-md p-2 text-gray-500 hover:text-gray-900"
             aria-label="Open cart"
           >
