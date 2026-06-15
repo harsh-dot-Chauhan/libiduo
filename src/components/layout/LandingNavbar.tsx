@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ShoppingCart, User, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { useSession, signOut } from "next-auth/react";
@@ -11,9 +13,10 @@ const MUTED = "#B8A99A";
 const DARK = "#0D0608";
 
 export default function LandingNavbar() {
-  const { count, openDrawer } = useCartStore();
+  const { count } = useCartStore();
   const { data: session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <header style={{
@@ -23,12 +26,8 @@ export default function LandingNavbar() {
     }}>
       <div style={{ padding: "0 20px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 58 }}>
         {/* Logo */}
-        <Link href="/" style={{
-          fontFamily: "var(--font-playfair), 'Playfair Display', serif",
-          fontSize: 22, fontWeight: 900, color: GOLD,
-          letterSpacing: 4, textDecoration: "none",
-        }}>
-          LIBIDUO
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center" }}>
+          <Image src="/logo-full.png" alt="Libiduo" width={140} height={40} style={{ objectFit: "contain" }} priority />
         </Link>
 
         {/* Desktop nav links */}
@@ -36,10 +35,7 @@ export default function LandingNavbar() {
           <Link href="/products" style={{ color: MUTED, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", textDecoration: "none" }}>
             Shop
           </Link>
-          <a href="#about" style={{ color: MUTED, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", textDecoration: "none" }}>
-            About
-          </a>
-          {session?.user.role === "ADMIN" && (
+{session?.user.role === "ADMIN" && (
             <Link href="/admin" style={{ color: MUTED, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", textDecoration: "none" }}>
               Admin
             </Link>
@@ -50,7 +46,7 @@ export default function LandingNavbar() {
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {/* Cart */}
           <button
-            onClick={openDrawer}
+            onClick={() => router.push("/cart")}
             aria-label="Open cart"
             style={{ position: "relative", background: "none", border: "none", cursor: "pointer", padding: 8, color: MUTED, display: "flex", alignItems: "center", gap: 6 }}
           >
@@ -127,7 +123,6 @@ export default function LandingNavbar() {
           <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {[
               { label: "Shop", href: "/products" },
-              { label: "About", href: "#about" },
             ].map(({ label, href }) => (
               <Link key={label} href={href} onClick={() => setMenuOpen(false)}
                 style={{ fontSize: 13, color: MUTED, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", padding: "10px 0", borderBottom: "0.5px solid rgba(201,151,58,0.08)" }}
@@ -139,9 +134,6 @@ export default function LandingNavbar() {
               <>
                 <Link href="/account" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: MUTED, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", padding: "10px 0", borderBottom: "0.5px solid rgba(201,151,58,0.08)" }}>Account</Link>
                 <Link href="/orders" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: MUTED, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", padding: "10px 0", borderBottom: "0.5px solid rgba(201,151,58,0.08)" }}>Orders</Link>
-                {session.user.role === "ADMIN" && (
-                  <Link href="/admin" onClick={() => setMenuOpen(false)} style={{ fontSize: 13, color: MUTED, letterSpacing: 2, textTransform: "uppercase", textDecoration: "none", padding: "10px 0", borderBottom: "0.5px solid rgba(201,151,58,0.08)" }}>Admin</Link>
-                )}
                 <button onClick={() => signOut({ callbackUrl: "/" })} style={{ textAlign: "left", fontSize: 13, color: "#B05060", letterSpacing: 2, textTransform: "uppercase", background: "none", border: "none", cursor: "pointer", padding: "10px 0" }}>
                   Sign out
                 </button>

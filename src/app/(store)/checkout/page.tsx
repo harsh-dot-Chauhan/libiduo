@@ -63,7 +63,7 @@ export default function CheckoutPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
-  useEffect(() => { if (status === "unauthenticated") router.push("/login?callbackUrl=/checkout"); }, [status, router]);
+  useEffect(() => { if (status === "unauthenticated") window.location.href = "/login?callbackUrl=/checkout"; }, [status]);
 
   const fetchAddresses = useCallback(async () => {
     try {

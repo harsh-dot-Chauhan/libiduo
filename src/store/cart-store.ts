@@ -43,7 +43,7 @@ export const useCartStore = create<CartStore>((set, get) => ({
     try {
       const res = await axios.post<{ success: boolean; data: Cart }>("/api/cart", { productId, quantity });
       if (res.data.success) {
-        set({ items: res.data.data.items, ...computeTotals(res.data.data.items), isOpen: true });
+        set({ items: res.data.data.items, ...computeTotals(res.data.data.items) });
       }
     } finally {
       set({ loading: false });

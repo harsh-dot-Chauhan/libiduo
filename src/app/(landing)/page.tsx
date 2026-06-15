@@ -50,10 +50,10 @@ const MARQUEE_ITEMS = [
 const FOOTER_LINKS = [
   { label: "Shop All", href: "/products" },
   { label: "About Us", href: "#about" },
-  { label: "FAQ", href: "#" },
-  { label: "Contact", href: "#" },
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Use", href: "#" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Contact", href: "mailto:support@libiduo.com" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Use", href: "/terms" },
 ];
 
 async function getFeaturedProducts() {
