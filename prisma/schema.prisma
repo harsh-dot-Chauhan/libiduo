@@ -148,6 +148,19 @@ model CartSession {
   updatedAt DateTime @updatedAt
 }
 
+model Coupon {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discountPct Int
+  label       String
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  usageLimit  Int?
+  usageCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 enum Role {
   USER
   ADMIN

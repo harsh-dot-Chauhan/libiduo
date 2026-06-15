@@ -28,11 +28,6 @@ const css = {
   "--red":  "#E05050",
 } as React.CSSProperties;
 
-const COUPONS: Record<string, { pct: number; label: string }> = {
-  LIBIDUO10: { pct: 10, label: "10% off applied!" },
-  FIRST20:   { pct: 20, label: "20% off — First order discount!" },
-  COUPLE15:  { pct: 15, label: "15% off for couples!" },
-};
 
 type RecoProduct = {
   id: string; name: string; slug: string;
@@ -108,23 +103,29 @@ export default function CartPage() {
     setTimeout(() => setToast(null), 2200);
   }
 
-  function applyCoupon(code = couponCode) {
+  async function applyCoupon(code = couponCode) {
     const upper = code.trim().toUpperCase();
-    const match = COUPONS[upper];
-    if (match) {
-      const amt = Math.round(total * match.pct / 100);
-      setCouponAmt(amt);
-      setCouponResult({ ok: true, msg: `${match.label} (−₹${amt.toLocaleString("en-IN")})` });
-      showToast("Coupon applied successfully!");
-    } else {
+    if (!upper) return;
+    try {
+      const res  = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: upper }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        const amt = Math.round(total * json.data.pct / 100);
+        setCouponAmt(amt);
+        setCouponResult({ ok: true, msg: `${json.data.label} (−₹${amt.toLocaleString("en-IN")})` });
+        showToast("Coupon applied successfully!");
+      } else {
+        setCouponAmt(0);
+        setCouponResult({ ok: false, msg: json.error ?? "Invalid coupon code" });
+      }
+    } catch {
       setCouponAmt(0);
-      setCouponResult({ ok: false, msg: "Invalid coupon. Try LIBIDUO10" });
+      setCouponResult({ ok: false, msg: "Could not validate coupon. Try again." });
     }
-  }
-
-  function fillCoupon(code: string) {
-    setCouponCode(code);
-    applyCoupon(code);
   }
 
   const gwAmt  = giftWrap ? 99 : 0;
@@ -171,7 +172,7 @@ export default function CartPage() {
       >
         <Tag size={18} color="var(--gold)" />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--gold)" }}>Use code LIBIDUO10 for 10% off!</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: "var(--gold)" }}>Have a coupon code? Save on your order!</div>
           <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>Tap to apply coupon code</div>
         </div>
         <ChevronRight size={16} color="var(--muted)" />
@@ -309,15 +310,6 @@ export default function CartPage() {
                 {couponResult.msg}
               </div>
             )}
-            <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {Object.keys(COUPONS).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => fillCoupon(c)}
-                  style={{ padding: "6px 12px", border: "0.5px dashed rgba(201,151,58,0.4)", borderRadius: 20, fontSize: 11, color: "var(--gold)", cursor: "pointer", background: "none", letterSpacing: 0.5 }}
-                >{c}</button>
-              ))}
-            </div>
           </>
         )}
       </div>
