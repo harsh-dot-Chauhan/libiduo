@@ -30,7 +30,9 @@ export default auth((req) => {
     // RSC navigation requests (client-side Link clicks) break when middleware
     // redirects them — the raw RSC payload is shown as text. Let RSC navigations
     // through; the checkout/account pages handle unauthenticated state themselves.
-    const isRSCNavigation = req.headers.get("rsc") === "1";
+    const isRSCNavigation =
+      req.headers.get("rsc") === "1" ||
+      req.headers.has("next-router-state-tree");
     if (isRSCNavigation) return NextResponse.next();
 
     const loginUrl = new URL("/login", req.url);
