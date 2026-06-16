@@ -1,3 +1,7 @@
+// Load .env.local before Next.js initialises so Prisma picks up the correct
+// DATABASE_URL when running locally (NODE_ENV=production node server.js).
+require("dotenv").config({ path: ".env.local", override: false });
+
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
